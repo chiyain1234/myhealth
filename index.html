@@ -226,48 +226,56 @@
         }
 
         async function update() {
-            try {
-                const res = await fetch('./data.json?' + new Date().getTime());
-                if (!res.ok) throw new Error();
-                const text = await res.text();
-                const data = JSON.parse(text.replace(/,\s*}/g, '}').replace(/:\s*,/g, ':null,'));
-                
-                const setVal = (id, val, isRound = false) => {
-                    const el = document.getElementById(id);
-                    if (!el) return;
-                    let display = "--";
-                    if (val !== undefined && val !== null && val !== "") {
-                        display = isRound ? Math.round(val) : val;
-                        if (id === 'steps') display = Number(val).toLocaleString();
-                    }
-                    el.innerText = display;
-                };
-
-                setVal('bpm', data.bpm);
-                setVal('steps', data.steps);
-                setVal('calories', data.calories, true);
-                
-                if (data.sleep1 && data.sleep2) {
-                    const start = parseMyDate(data.sleep1);
-                    const end = parseMyDate(data.sleep2);
-                    if (start && end) {
-                        let diffH = (end - start) / (1000 * 60 * 60);
-                        if (diffH < 0) diffH += 24; 
-                        document.getElementById('sleep').innerText = diffH.toFixed(1);
-                    }
-                } else if (data.sleep) {
-                    setVal('sleep', data.sleep);
-                }
-                
-                if (data.date) {
-                    const d = parseMyDate(data.date);
-                    document.getElementById('time').innerText = "最終更新: " + (d ? d.toLocaleString('ja-JP') : data.date);
-                }
-                document.getElementById('debug').innerText = "";
-            } catch (e) {
-                document.getElementById('debug').innerText = "データの更新を確認中...";
+    try {
+        const res = await fetch('./data.json?' + new Date().getTime());
+        if (!res.ok) throw new Error();
+        const text = await res.text();
+        const data = JSON.parse(text.replace(/,\s*}/g, '}').replace(/:\s*,/g, ':null,'));
+        
+        const setVal = (id, val, isRound = false) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            let display = "--";
+            if (val !== undefined && val !== null && val !== "") {
+                display = isRound ? Math.round(val) : val;
+                if (id === 'steps') display = Number(val).toLocaleString();
             }
+            el.innerText = display;
+        };
+
+        // 値をセット
+        setVal('bpm', data.bpm);
+        setVal('steps', data.steps);
+        setVal('calories', data.calories, true);
+
+        // ★ 心拍数に合わせて鼓動を連動させる
+        const heartIcon = document.querySelector('.heart-icon');
+        if (heartIcon && data.bpm > 0) {
+            const duration = 60 / data.bpm; 
+            heartIcon.style.animationDuration = `${duration}s`;
         }
+        
+        if (data.sleep1 && data.sleep2) {
+            const start = parseMyDate(data.sleep1);
+            const end = parseMyDate(data.sleep2);
+            if (start && end) {
+                let diffH = (end - start) / (1000 * 60 * 60);
+                if (diffH < 0) diffH += 24; 
+                document.getElementById('sleep').innerText = diffH.toFixed(1);
+            }
+        } else if (data.sleep) {
+            setVal('sleep', data.sleep);
+        }
+        
+        if (data.date) {
+            const d = parseMyDate(data.date);
+            document.getElementById('time').innerText = "最終更新: " + (d ? d.toLocaleString('ja-JP') : data.date);
+        }
+        document.getElementById('debug').innerText = "";
+    } catch (e) {
+        document.getElementById('debug').innerText = "データ更新を確認中...";
+    }
+}
 
         update();
         setInterval(update, 30000); 
