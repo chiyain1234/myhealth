@@ -2,62 +2,104 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>ちゃいんの心拍数</title>
+    <title>ちゃいんの活動ステータス</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: sans-serif; text-align: center; background: #f0f2f5; margin: 0; padding: 20px; }
-        .card { background: white; padding: 2rem; border-radius: 20px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1); min-width: 300px; }
-        #bpm { font-size: 5rem; color: #ff4757; font-weight: bold; margin: 10px 0; }
-        #time { color: #747d8c; font-size: 1.2rem; font-weight: 500; }
-        h1 { font-size: 1.5rem; color: #333; margin-bottom: 0.5rem; }
-        p { color: #a1a1a1; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; text-align: center; background: #f0f2f5; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 500px; margin: auto; }
+        .card { background: white; padding: 1.5rem; border-radius: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h1 { font-size: 1.4rem; color: #333; margin-bottom: 20px; font-weight: bold; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .stat-box { background: #fdfdfd; padding: 15px; border-radius: 20px; border: 1px solid #f0f0f0; transition: transform 0.2s; }
+        .label { font-size: 0.85rem; color: #888; display: block; margin-bottom: 8px; }
+        .value { font-size: 1.6rem; font-weight: bold; font-variant-numeric: tabular-nums; }
+        .unit { font-size: 0.8rem; margin-left: 4px; color: #999; }
+        
+        /* 各項目のアクセントカラー */
+        .bpm-box { grid-column: span 2; background: #fff5f6; border-color: #ffe0e3; }
+        .bpm-box .value { color: #ff4757; }
+        .steps-box .value { color: #2ed573; }
+        .cal-box .value { color: #ffa502; }
+        .stress-box .value { color: #5352ed; }
+        .sleep-box .value { color: #3742fa; }
+
+        #time { color: #aaa; font-size: 0.85rem; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
+        .error-msg { color: #ff4757; font-size: 0.8rem; display: none; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>ちゃいんの心拍数</h1>
-        <div id="bpm">--</div>
-        <p>BPM</p>
-        <div id="time">更新待ち...</div>
+    <div class="container">
+        <h1>ちゃいんの活動ステータス</h1>
+        
+        <div class="card">
+            <div class="grid">
+                <div class="stat-box bpm-box">
+                    <span class="label">心拍数</span>
+                    <span id="bpm" class="value">--</span><span class="unit">BPM</span>
+                </div>
+                <div class="stat-box steps-box">
+                    <span class="label">今日の歩数</span>
+                    <span id="steps" class="value">--</span><span class="unit">歩</span>
+                </div>
+                <div class="stat-box cal-box">
+                    <span class="label">消費カロリー</span>
+                    <span id="calories" class="value">--</span><span class="unit">kcal</span>
+                </div>
+                <div class="stat-box stress-box">
+                    <span class="label">ストレス度</span>
+                    <span id="stress" class="value">--</span>
+                </div>
+                <div class="stat-box sleep-box">
+                    <span class="label">睡眠時間</span>
+                    <span id="sleep" class="value">--</span><span class="unit">時間</span>
+                </div>
+            </div>
+            <div id="error" class="error-msg">データ読み込みに失敗しました</div>
+            <div id="time">更新待ち...</div>
+        </div>
     </div>
 
     <script>
+        // 数字をカンマ区切りにするヘルパー
+        function formatNum(val) {
+            if (val === undefined || val === null || val === "") return "--";
+            return Number(val).toLocaleString();
+        }
+
         async function update() {
             try {
                 const res = await fetch('./data.json?' + new Date().getTime());
+                if (!res.ok) throw new Error();
                 const data = await res.json();
                 
-                // BPMを表示
-                document.getElementById('bpm').innerText = data.bpm;
+                // 各値の表示（変なデータが来ても"--"で耐える）
+                document.getElementById('bpm').innerText = data.bpm || "--";
+                document.getElementById('steps').innerText = formatNum(data.steps);
+                document.getElementById('calories').innerText = Math.round(data.calories) || "0";
+                document.getElementById('stress').innerText = data.stress || "--";
                 
-                // 日付の解析
-                // "4/27/26 18:00:00 JST" のような形式を解析
-                let dateStr = data.date;
+                // 睡眠時間の表示
+                let sleepVal = data.sleep;
+                if (typeof sleepVal === 'number') sleepVal = (sleepVal / 60).toFixed(1); // 分で届いた場合
+                document.getElementById('sleep').innerText = sleepVal || "--";
                 
-                // ブラウザが解釈しやすいように少し整形（JSTを取り除くなど）
-                let cleanDateStr = dateStr.replace('JST', '').trim();
-                const dateObj = new Date(cleanDateStr);
-                
-                if (isNaN(dateObj.getTime())) {
-                    // もし解析に失敗したら、届いた文字をそのまま出す（安全策）
-                    document.getElementById('time').innerText = dateStr;
-                } else {
-                    // 日本語形式で「分・秒」まで表示
-                    document.getElementById('time').innerText = dateObj.toLocaleString('ja-JP', {
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                        hour12: false
-                    });
+                // 送信時刻の表示
+                if (data.date) {
+                    // 日付形式がバラバラでもなるべく解析する
+                    const dateStr = data.date.replace(/-/g, '/').replace('JST', '');
+                    const dateObj = new Date(dateStr);
+                    const displayTime = isNaN(dateObj.getTime()) ? data.date : dateObj.toLocaleString('ja-JP');
+                    document.getElementById('time').innerText = "最終更新: " + displayTime;
                 }
+                
+                document.getElementById('error').style.display = "none";
             } catch (e) {
-                document.getElementById('time').innerText = "エラー: " + e.message;
+                document.getElementById('error').style.display = "block";
             }
         }
 
         update();
-        setInterval(update, 30000); // 30秒ごとにチェック
+        setInterval(update, 30000); 
     </script>
 </body>
 </html>
