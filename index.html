@@ -67,7 +67,7 @@
         // 正しくエンコードされたWebhook URL
         const encoded = 'aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTQ5ODI4NDAzMDkyMjMyNjA4Ni9SbV9tWnk5QjVOLURFRlRFbEUyclVpR0BhdnZGQkprNm9YYjlLeHVmaWMwOUxTdmQ1ZzVkdTE3S2d6ZWotUnZuVjZVcg==';
         // ミスを補正して復元
-        const WEBHOOK_URL = atob(encoded).replace('@', 'o'); 
+        const WEBHOOK_URL = "https://discord.com/api/webhooks/1498284030922326086/Rm_mZy9B5N-DEFTElE2rUiG0awvFBJk6oXb9Kxufic09LSvd5g5du17Kgzej-RvnV6Ur"; 
         const MY_DISCORD_ID = '922776570597376012'; 
 
         async function sendDiscordNotification() {
