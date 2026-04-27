@@ -40,7 +40,6 @@
         .value { font-size: 1.8rem; font-weight: 800; display: block; }
         .unit { font-size: 0.75rem; color: #b2bec3; font-weight: normal; }
 
-        /* 個別スタイル */
         .bpm-box { grid-column: span 2; background: #fff5f6; border-color: #ffe0e3; }
         .bpm-box .value { color: #ff4757; font-size: 2.8rem; }
         .steps-box .value { color: #2ed573; }
@@ -110,17 +109,15 @@
     </div>
 
     <script>
-        // 暗号化されたWebhook URL
-        const secretData = "a3R3c3Y6T09nbHZuZnJneS5mbm9PT2RpYnVodm5udm9MMVF6T0RJM05EUXdNemt5TWpNeU5qQTROazlTYlY5dGVXazVRejVPUVVSR1ZGUmxiaVV5Y2xWcEwwZmhkblowUWtwcmRtOXpZbmxMZVhkbVpXMHpWemsxWkhWMTROWG01R00xWkhVMTdaMmR6WldvclVtcHVkVlpWY2c9PQ==";
-        const MY_DISCORD_ID = '922776570597376012'; 
+        const secretData = "a3R3c3Y6T09nbHZuZnJneS5mbm9PT2RpYnVodm5udm9MMVF6T0RJM05EUXdNemt5TWpNeU5qQTROazlTYlY5dGVXazVRejVPUVVSR1ZGUmxiaVV5Y2xWcEwwZmhkblowUWtwcmRtOXpZbmxMZVhkbVpXMHpWemsxWkhWMTROWG01R00xWkhVMTdaMmR6WldvclVtcHVkVlpWY2c9PQ==";const MY_DISCORD_ID = '922776570597376012'; 
+
+        const WEBHOOK_URL = atob(secretData).split('').map(c => String.fromCharCode(c.charCodeAt(0) - 3)).join('');const MY_DISCORD_ID = '922776570597376012'; 
 
         async function sendDiscordNotification() {
             const btn = document.getElementById('notifyBtn');
             btn.disabled = true;
             btn.innerText = "送信中...";
 
-            // 実行時に復号
-            const WEBHOOK_URL = atob(secretData).split('').map(c => String.fromCharCode(c.charCodeAt(0) - 3)).join('');
             const bpm = document.getElementById('bpm').innerText;
             const content = `<@${MY_DISCORD_ID}> 叩き起こされました！\n現在の心拍数: ${bpm} BPM`;
 
