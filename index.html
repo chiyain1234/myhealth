@@ -20,7 +20,7 @@
         .bpm-box .value { color: #ff4757; font-size: 2.2rem; }
         .steps-box .value { color: #2ed573; }
         .cal-box .value { color: #ffa502; }
-        .stress-box .value { color: #5352ed; }
+        .resting-box .value { color: #5352ed; }
         .sleep-box .value { color: #3742fa; }
 
         #time { color: #aaa; font-size: 0.85rem; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
@@ -42,12 +42,12 @@
                     <span id="steps" class="value">--</span><span class="unit">歩</span>
                 </div>
                 <div class="stat-box cal-box">
-                    <span class="label">消費カロリー</span>
+                    <span class="label">アクティブ消費</span>
                     <span id="calories" class="value">--</span><span class="unit">kcal</span>
                 </div>
-                <div class="stat-box stress-box">
-                    <span class="label">ストレス度</span>
-                    <span id="stress" class="value">--</span>
+                <div class="stat-box resting-box">
+                    <span class="label">安静時消費</span>
+                    <span id="resting" class="value">--</span><span class="unit">kcal</span>
                 </div>
                 <div class="stat-box sleep-box">
                     <span class="label">睡眠時間</span>
@@ -64,36 +64,46 @@
             try {
                 const res = await fetch('./data.json?' + new Date().getTime());
                 if (!res.ok) throw new Error("JSON読み込み失敗");
-                const data = await res.json();
                 
-                // 各値の安全な表示（nullやundefinedを弾く）
-                const setVal = (id, val, fallback = "--") => {
-                    document.getElementById(id).innerText = (val !== undefined && val !== null && val !== "") ? val : fallback;
+                const text = await res.text();
+                // JSONが壊れている（末尾にカンマがある等）場合の簡易修正
+                const safeJson = text.replace(/,\s*}/g, '}').replace(/:\s*,/g, ':null,');
+                const data = JSON.parse(safeJson);
+                
+                const setVal = (id, val, isRound = false) => {
+                    let display = "--";
+                    if (val !== undefined && val !== null && val !== "") {
+                        display = isRound ? Math.round(val) : val;
+                        if (id === 'steps') display = Number(val).toLocaleString();
+                    }
+                    document.getElementById(id).innerText = display;
                 };
 
                 setVal('bpm', data.bpm);
-                setVal('steps', data.steps ? Number(data.steps).toLocaleString() : "0");
-                setVal('calories', data.calories ? Math.round(data.calories) : "0");
-                setVal('stress', data.stress);
+                setVal('steps', data.steps);
+                setVal('calories', data.calories, true);
+                setVal('resting', data.resting, true);
                 
                 // 睡眠時間の表示処理
                 let s = data.sleep;
-                if (s && !isNaN(s)) {
-                    // 数値(分)で届いた場合は時間に変換
-                    setVal('sleep', (Number(s) / 60).toFixed(1));
+                if (s && !isNaN(s) && s > 30) { // 30より大きい場合は「分」と判定
+                    document.getElementById('sleep').innerText = (Number(s) / 60).toFixed(1);
                 } else {
-                    setVal('sleep', s);
+                    document.getElementById('sleep').innerText = s || "--";
                 }
                 
-                // 更新時刻
-                if (data.date) {
+                // 更新時刻の表示
+                if (data.date && isNaN(data.date)) {
                     const d = new Date(data.date.replace(/-/g, '/').replace('JST', ''));
                     document.getElementById('time').innerText = "最終送信: " + (isNaN(d.getTime()) ? data.date : d.toLocaleString('ja-JP'));
+                } else {
+                    // 日付が数字（75など）だった場合の予備表示
+                    document.getElementById('time').innerText = "最終送信: (時刻データ待ち)";
                 }
 
                 document.getElementById('debug').innerText = ""; 
             } catch (e) {
-                document.getElementById('debug').innerText = "通信中またはデータ待ち...";
+                document.getElementById('debug').innerText = "データ解析中... (JSONを確認してください)";
             }
         }
 
