@@ -2,31 +2,49 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>My Heart Rate</title>
+    <title>ちゃいんの心拍数</title>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #f0f2f5; }
-        .card { background: white; padding: 2rem; border-radius: 20px; display: inline-block; margin-top: 50px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        #bpm { font-size: 4rem; color: #ff4757; font-weight: bold; }
-        #time { color: #747d8c; }
+        body { font-family: sans-serif; text-align: center; background: #f0f2f5; margin: 0; padding: 20px; }
+        .card { background: white; padding: 2rem; border-radius: 20px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        #bpm { font-size: 4rem; color: #ff4757; font-weight: bold; margin: 10px 0; }
+        #time { color: #747d8c; font-size: 1.1rem; }
+        h1 { font-size: 1.5rem; color: #333; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h1>現在の心拍数</h1>
+        <h1>ちゃいんの心拍数</h1>
         <div id="bpm">--</div>
         <p>BPM</p>
         <div id="time">更新待ち...</div>
     </div>
+
     <script>
         async function update() {
-            // 同じフォルダにある data.json を読みに行く
-            const res = await fetch('./data.json?' + new Date().getTime());
-            const data = await res.json();
-            document.getElementById('bpm').innerText = data.bpm;
-            document.getElementById('time').innerText = new Date(data.time).toLocaleString('ja-JP');
+            try {
+                const res = await fetch('./data.json?' + new Date().getTime());
+                const data = await res.json();
+                
+                document.getElementById('bpm').innerText = data.bpm;
+                
+                const dateObj = new Date(data.date);
+                
+                if (isNaN(dateObj.getTime())) {
+                    document.getElementById('time').innerText = "日付データが不正です";
+                } else {
+                    document.getElementById('time').innerText = dateObj.toLocaleString('ja-JP', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
+                }
+            } catch (e) {
+                document.getElementById('time').innerText = "エラー: " + e.message;
+            }
         }
+
         update();
-        setInterval(update, 30000); // 30秒ごとに画面を更新
+        setInterval(update, 30000);
     </script>
 </body>
 </html>
