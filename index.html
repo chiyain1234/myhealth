@@ -59,13 +59,21 @@
     </div>
 
     <script>
+        // 日付文字列をJavaScriptが認識できる形式に変換する関数
+        function parseMyDate(dateStr) {
+            if (!dateStr || typeof dateStr !== 'string') return null;
+            // "4/27/26 19:00:00" -> "2026/04/27 19:00:00"
+            let s = dateStr.replace(/(\d+)\/(\d+)\/(\d+)/, '20$3/$1/$2');
+            let d = new Date(s);
+            return isNaN(d.getTime()) ? null : d;
+        }
+
         async function update() {
             try {
                 const res = await fetch('./data.json?' + new Date().getTime());
                 if (!res.ok) throw new Error("JSON読み込み失敗");
                 
                 const text = await res.text();
-                // JSONの微修正（末尾カンマ対策など）
                 const data = JSON.parse(text.replace(/,\s*}/g, '}').replace(/:\s*,/g, ':null,'));
                 
                 const setVal = (id, val, isRound = false) => {
@@ -82,22 +90,27 @@
                 setVal('calories', data.calories, true);
                 setVal('resting', data.resting, true);
                 
-                // 睡眠時間の表示（分→時間変換）
-                if (data.sleep && !isNaN(data.sleep)) {
-                    document.getElementById('sleep').innerText = (Number(data.sleep) / 60).toFixed(1);
+                // --- 睡眠時間の計算ロジック ---
+                if (data.sleep1 && data.sleep2) {
+                    const start = parseMyDate(data.sleep1);
+                    const end = parseMyDate(data.sleep2);
+                    
+                    if (start && end) {
+                        // 差分をミリ秒で取得 -> 時間(h)に変換
+                        let diffH = (end - start) / (1000 * 60 * 60);
+                        // もし日付を跨いでマイナスになった場合の補正（24時間を足す）
+                        if (diffH < 0) diffH += 24; 
+                        document.getElementById('sleep').innerText = diffH.toFixed(1);
+                    }
                 } else {
-                    document.getElementById('sleep').innerText = data.sleep || "--";
+                    setVal('sleep', data.sleep); // 従来通りの数値（分）が届いた場合
                 }
                 
-                // 日付表示の修正
+                // --- 日付表示 ---
                 if (data.date) {
-                    // "4/27/26 19:00:00" を解析
-                    // 一部のブラウザ用に2026年に補正
-                    let dateStr = data.date.includes('/') ? data.date.replace(/(\d+)\/(\d+)\/(\d+)/, '20$3/$1/$2') : data.date;
-                    const d = new Date(dateStr);
-                    
-                    document.getElementById('time').innerText = "最終送信: " + 
-                        (isNaN(d.getTime()) ? data.date : d.toLocaleString('ja-JP'));
+                    const d = parseMyDate(data.date);
+                    document.getElementById('time').innerText = "実行時刻: " + 
+                        (d ? d.toLocaleString('ja-JP') : data.date);
                 }
 
                 document.getElementById('debug').innerText = ""; 
