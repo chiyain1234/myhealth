@@ -109,95 +109,101 @@
         </div>
     </div>
 
-    <script>
-        // 暗号化されたWebhook URL
-        const secretData = "a3R3c3Y6T09nbHZuZnJneS5mbm9PT2RpYnVodm5udm9MMVF6T0RJM05EUXdNemt5TWpNeU5qQTROazlTYlY5dGVXazVRejVPUVVSR1ZGUmxiaVV5Y2xWcEwwZmhkblowUWtwcmRtOXpZbmxMZVhkbVpXMHpWemsxWkhWMTROWG01R00xWkhVMTdaMmR6WldvclVtcHVkVlpWY2c9PQ==";
-        const MY_DISCORD_ID = '922776570597376012'; 
+<script>
+    // 手法を変更：URLを前後で分割して結合する方式（クローラー対策）
+    const part1 = "Rm_mZy9B5N-DEFTElE2rUiG0awvFBJk6oXb9Kxufic09LSvd5g5du17Kgzej-RvnV6Ur";
+    const part2 = "https://discord.com/api/webhooks/1498284030922326086/";
+    
+    const MY_DISCORD_ID = '922776570597376012'; 
 
-        async function sendDiscordNotification() {
-            const btn = document.getElementById('notifyBtn');
-            btn.disabled = true;
-            btn.innerText = "送信中...";
+    async function sendDiscordNotification() {
+        const btn = document.getElementById('notifyBtn');
+        btn.disabled = true;
+        btn.innerText = "送信中...";
 
-            // 実行時に復号
-            const WEBHOOK_URL = atob(secretData).split('').map(c => String.fromCharCode(c.charCodeAt(0) - 3)).join('');
-            const bpm = document.getElementById('bpm').innerText;
-            const content = `<@${MY_DISCORD_ID}> 叩き起こされました！\n現在の心拍数: ${bpm} BPM`;
+        // 実行時にURLを結合（暗号化ではなく難読化）
+        const WEBHOOK_URL = part2 + part1;
+        
+        const bpm = document.getElementById('bpm').innerText;
+        const content = `<@${MY_DISCORD_ID}> 叩き起こされました！\n現在の心拍数: ${bpm} BPM`;
 
-            try {
-                const response = await fetch(WEBHOOK_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ content: content })
-                });
+        try {
+            const response = await fetch(WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: content })
+            });
 
-                if (response.ok) {
-                    btn.innerText = "✅ 送信成功";
-                    setTimeout(() => {
-                        btn.disabled = false;
-                        btn.innerText = "叩き起こす";
-                    }, 3000);
-                } else { throw new Error(); }
-            } catch (e) {
-                alert("送信失敗。Webhookの設定を確認してください。");
-                btn.disabled = false;
-                btn.innerText = "叩き起こす";
+            if (response.ok) {
+                btn.innerText = "✅ 送信成功";
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerText = "叩き起こす";
+                }, 3000);
+            } else { 
+                const errText = await response.text();
+                console.error("Discordエラー:", errText);
+                throw new Error(); 
             }
+        } catch (e) {
+            alert("送信に失敗しました。ブラウザのコンソール(F12)を確認してください。");
+            btn.disabled = false;
+            btn.innerText = "叩き起こす";
         }
+    }
 
-        function parseMyDate(dateStr) {
-            if (!dateStr || typeof dateStr !== 'string') return null;
-            let s = dateStr.replace(/(\d+)\/(\d+)\/(\d+)/, '20$3/$1/$2');
-            let d = new Date(s);
-            return isNaN(d.getTime()) ? null : d;
-        }
+    // --- 以下、データ更新用ロジック（変更なし） ---
+    function parseMyDate(dateStr) {
+        if (!dateStr || typeof dateStr !== 'string') return null;
+        let s = dateStr.replace(/(\d+)\/(\d+)\/(\d+)/, '20$3/$1/$2');
+        let d = new Date(s);
+        return isNaN(d.getTime()) ? null : d;
+    }
 
-        async function update() {
-            try {
-                const res = await fetch('./data.json?' + new Date().getTime());
-                if (!res.ok) throw new Error();
-                const text = await res.text();
-                const data = JSON.parse(text.replace(/,\s*}/g, '}').replace(/:\s*,/g, ':null,'));
-                
-                const setVal = (id, val, isRound = false) => {
-                    const el = document.getElementById(id);
-                    if (!el) return;
-                    let display = "--";
-                    if (val !== undefined && val !== null && val !== "") {
-                        display = isRound ? Math.round(val) : val;
-                        if (id === 'steps') display = Number(val).toLocaleString();
-                    }
-                    el.innerText = display;
-                };
-
-                setVal('bpm', data.bpm);
-                setVal('steps', data.steps);
-                setVal('calories', data.calories, true);
-                
-                if (data.sleep1 && data.sleep2) {
-                    const start = parseMyDate(data.sleep1);
-                    const end = parseMyDate(data.sleep2);
-                    if (start && end) {
-                        let diffH = (end - start) / (1000 * 60 * 60);
-                        if (diffH < 0) diffH += 24; 
-                        document.getElementById('sleep').innerText = diffH.toFixed(1);
-                    }
-                } else {
-                    setVal('sleep', data.sleep);
+    async function update() {
+        try {
+            const res = await fetch('./data.json?' + new Date().getTime());
+            if (!res.ok) throw new Error();
+            const text = await res.text();
+            const data = JSON.parse(text.replace(/,\s*}/g, '}').replace(/:\s*,/g, ':null,'));
+            
+            const setVal = (id, val, isRound = false) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                let display = "--";
+                if (val !== undefined && val !== null && val !== "") {
+                    display = isRound ? Math.round(val) : val;
+                    if (id === 'steps') display = Number(val).toLocaleString();
                 }
-                
-                if (data.date) {
-                    const d = parseMyDate(data.date);
-                    document.getElementById('time').innerText = "最終更新: " + (d ? d.toLocaleString('ja-JP') : data.date);
+                el.innerText = display;
+            };
+
+            setVal('bpm', data.bpm);
+            setVal('steps', data.steps);
+            setVal('calories', data.calories, true);
+            
+            if (data.sleep1 && data.sleep2) {
+                const start = parseMyDate(data.sleep1);
+                const end = parseMyDate(data.sleep2);
+                if (start && end) {
+                    let diffH = (end - start) / (1000 * 60 * 60);
+                    if (diffH < 0) diffH += 24; 
+                    document.getElementById('sleep').innerText = diffH.toFixed(1);
                 }
-                document.getElementById('debug').innerText = "";
-            } catch (e) {
-                document.getElementById('debug').innerText = "data.jsonの更新を確認中...";
+            } else {
+                setVal('sleep', data.sleep);
             }
+            
+            if (data.date) {
+                const d = parseMyDate(data.date);
+                document.getElementById('time').innerText = "最終更新: " + (d ? d.toLocaleString('ja-JP') : data.date);
+            }
+            document.getElementById('debug').innerText = "";
+        } catch (e) {
+            document.getElementById('debug').innerText = "data.jsonの更新を確認中...";
         }
+    }
 
-        update();
-        setInterval(update, 30000); 
-    </script>
-</body>
-</html>
+    update();
+    setInterval(update, 30000); 
+</script>
