@@ -17,96 +17,32 @@
             --sleep-blue: #3742fa;
         }
 
-        /* スクロールを禁止し、画面にフィットさせる */
         html, body { 
-            margin: 0; 
-            padding: 0; 
-            width: 100%; 
-            height: 100%; 
-            overflow: hidden; /* スクロール禁止 */
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            overflow: hidden; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
         }
 
         body { 
             background: var(--bg-gradient); 
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center; 
             color: var(--text-main); 
         }
 
-        .container { 
-            width: 90%;
-            max-width: 380px; 
-            /* 画面が小さい時に縮小するように調整 */
-            max-height: 95vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
+        .container { width: 90%; max-width: 380px; max-height: 95vh; display: flex; flex-direction: column; justify-content: center; }
+        h1 { color: white; font-size: 1.2rem; margin: 0 0 15px 0; font-weight: 700; text-shadow: 0 2px 10px rgba(0,0,0,0.2); text-align: center; }
 
-        h1 { 
-            color: white;
-            font-size: 1.2rem; 
-            margin: 0 0 15px 0; 
-            font-weight: 700; 
-            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            text-align: center;
-        }
+        .card { background: var(--card-bg); padding: 1.5rem; border-radius: 28px; box-shadow: 0 20px 40px -12px rgba(0,0,0,0.3); backdrop-filter: blur(10px); }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-        .card { 
-            background: var(--card-bg); 
-            padding: 1.5rem; 
-            border-radius: 28px; 
-            box-shadow: 0 20px 40px -12px rgba(0,0,0,0.3); 
-            backdrop-filter: blur(10px);
-        }
-
-        .grid { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 10px; 
-        }
-
-        .stat-box { 
-            background: #ffffff; 
-            padding: 12px 8px; 
-            border-radius: 20px; 
-            border: 1px solid #edf2f7;
-            text-align: center;
-        }
-
-        .label { 
-            font-size: 0.7rem; 
-            color: var(--text-sub); 
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            margin-bottom: 4px; 
-            font-weight: 600; 
-        }
-
+        .stat-box { background: #ffffff; padding: 12px 8px; border-radius: 20px; border: 1px solid #edf2f7; text-align: center; }
+        .label { font-size: 0.7rem; color: var(--text-sub); display: flex; align-items: center; justify-content: center; gap: 4px; margin-bottom: 4px; font-weight: 600; }
         .value { font-size: 1.4rem; font-weight: 800; display: block; }
         .unit { font-size: 0.65rem; color: #a0aec0; }
 
-        /* 特大ボックス */
-        .bpm-box { 
-            grid-column: span 2; 
-            padding: 15px 10px;
-            background: linear-gradient(to bottom right, #fffafa, #fff5f6);
-        }
-        .bpm-box .value { 
-            color: var(--bpm-red); 
-            font-size: 3rem; 
-            line-height: 1.1;
-        }
+        .bpm-box { grid-column: span 2; padding: 15px 10px; background: linear-gradient(to bottom right, #fffafa, #fff5f6); }
+        .bpm-box .value { color: var(--bpm-red); font-size: 3rem; line-height: 1.1; }
 
-        .heart-icon {
-            display: inline-block;
-            animation: pulse 1.2s infinite;
-        }
-
+        .heart-icon { display: inline-block; animation: pulse 1.2s infinite; }
         @keyframes pulse {
             0% { transform: scale(1); }
             15% { transform: scale(1.3); }
@@ -117,40 +53,20 @@
 
         .steps-box .value { color: var(--steps-green); }
         .cal-box .value { color: var(--cal-orange); }
-        .sleep-box { 
-            grid-column: span 2; 
-            background: linear-gradient(to bottom right, #f8faff, #f0f3ff);
-        }
-        .sleep-box .value { color: var(--sleep-blue); }
+        .sleep-box { grid-column: span 2; background: linear-gradient(to bottom right, #f8faff, #f0f3ff); }
+        .sleep-box .value { color: var(--sleep-blue); font-size: 1.6rem; }
+        /* 睡眠時間内の「時間」「分」の文字を少し小さくする */
+        .sleep-box .unit-inline { font-size: 0.9rem; margin: 0 4px; font-weight: 600; color: var(--sleep-blue); }
 
         .notify-btn {
-            margin-top: 15px;
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 18px;
-            background: var(--discord-color);
-            color: white;
-            font-size: 0.95rem;
-            font-weight: 800;
-            cursor: pointer;
-            box-shadow: 0 8px 15px rgba(88, 101, 242, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            margin-top: 15px; width: 100%; padding: 14px; border: none; border-radius: 18px; 
+            background: var(--discord-color); color: white; font-size: 0.95rem; font-weight: 800; 
+            cursor: pointer; box-shadow: 0 8px 15px rgba(88, 101, 242, 0.3); 
+            display: flex; align-items: center; justify-content: center; gap: 8px;
         }
-
         .notify-btn:disabled { background: #b2bec3; }
 
-        #time { 
-            color: #a0aec0; 
-            font-size: 0.7rem; 
-            margin-top: 15px; 
-            padding-top: 10px;
-            border-top: 1px solid #f1f2f6; 
-            text-align: center;
-        }
+        #time { color: #a0aec0; font-size: 0.7rem; margin-top: 15px; padding-top: 10px; border-top: 1px solid #f1f2f6; text-align: center; }
         .error-log { color: #ff4757; font-size: 0.65rem; text-align: center; margin-top: 4px; }
     </style>
 </head>
@@ -177,8 +93,7 @@
                 <div class="stat-box sleep-box">
                     <span class="label">😴 睡眠時間</span>
                     <span id="sleep" class="value">--</span>
-                    <span class="unit">時間</span>
-                </div>
+                    </div>
             </div>
             <button id="notifyBtn" class="notify-btn" onclick="sendDiscordNotification()">
                 <span>🔔</span> 叩き起こす
@@ -226,56 +141,62 @@
         }
 
         async function update() {
-    try {
-        const res = await fetch('./data.json?' + new Date().getTime());
-        if (!res.ok) throw new Error();
-        const text = await res.text();
-        const data = JSON.parse(text.replace(/,\s*}/g, '}').replace(/:\s*,/g, ':null,'));
-        
-        const setVal = (id, val, isRound = false) => {
-            const el = document.getElementById(id);
-            if (!el) return;
-            let display = "--";
-            if (val !== undefined && val !== null && val !== "") {
-                display = isRound ? Math.round(val) : val;
-                if (id === 'steps') display = Number(val).toLocaleString();
-            }
-            el.innerText = display;
-        };
+            try {
+                const res = await fetch('./data.json?' + new Date().getTime());
+                if (!res.ok) throw new Error();
+                const text = await res.text();
+                const data = JSON.parse(text.replace(/,\s*}/g, '}').replace(/:\s*,/g, ':null,'));
+                
+                const setVal = (id, val, isRound = false) => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    let display = "--";
+                    if (val !== undefined && val !== null && val !== "") {
+                        display = isRound ? Math.round(val) : val;
+                        if (id === 'steps') display = Number(val).toLocaleString();
+                    }
+                    el.innerText = display;
+                };
 
-        // 値をセット
-        setVal('bpm', data.bpm);
-        setVal('steps', data.steps);
-        setVal('calories', data.calories, true);
+                setVal('bpm', data.bpm);
+                setVal('steps', data.steps);
+                setVal('calories', data.calories, true);
 
-        // ★ 心拍数に合わせて鼓動を連動させる
-        const heartIcon = document.querySelector('.heart-icon');
-        if (heartIcon && data.bpm > 0) {
-            const duration = 60 / data.bpm; 
-            heartIcon.style.animationDuration = `${duration}s`;
-        }
-        
-        if (data.sleep1 && data.sleep2) {
-            const start = parseMyDate(data.sleep1);
-            const end = parseMyDate(data.sleep2);
-            if (start && end) {
-                let diffH = (end - start) / (1000 * 60 * 60);
-                if (diffH < 0) diffH += 24; 
-                document.getElementById('sleep').innerText = diffH.toFixed(1);
+                // 心拍数連動アニメーション
+                const heartIcon = document.querySelector('.heart-icon');
+                if (heartIcon && data.bpm > 0) {
+                    const duration = 60 / data.bpm; 
+                    heartIcon.style.animationDuration = `${duration}s`;
+                }
+                
+                // 睡眠時間の計算（時間と分に変換）
+                if (data.sleep1 && data.sleep2) {
+                    const start = parseMyDate(data.sleep1);
+                    const end = parseMyDate(data.sleep2);
+                    if (start && end) {
+                        let diffMs = end - start;
+                        if (diffMs < 0) diffMs += 24 * 60 * 60 * 1000; 
+                        
+                        const totalMinutes = Math.floor(diffMs / (1000 * 60));
+                        const h = Math.floor(totalMinutes / 60);
+                        const m = totalMinutes % 60;
+                        
+                        document.getElementById('sleep').innerHTML = 
+                            `${h}<span class="unit-inline">時間</span>${m}<span class="unit-inline">分</span>`;
+                    }
+                } else {
+                    setVal('sleep', data.sleep);
+                }
+                
+                if (data.date) {
+                    const d = parseMyDate(data.date);
+                    document.getElementById('time').innerText = "最終更新: " + (d ? d.toLocaleString('ja-JP') : data.date);
+                }
+                document.getElementById('debug').innerText = "";
+            } catch (e) {
+                document.getElementById('debug').innerText = "データ更新を確認中...";
             }
-        } else if (data.sleep) {
-            setVal('sleep', data.sleep);
         }
-        
-        if (data.date) {
-            const d = parseMyDate(data.date);
-            document.getElementById('time').innerText = "最終更新: " + (d ? d.toLocaleString('ja-JP') : data.date);
-        }
-        document.getElementById('debug').innerText = "";
-    } catch (e) {
-        document.getElementById('debug').innerText = "データ更新を確認中...";
-    }
-}
 
         update();
         setInterval(update, 30000); 
