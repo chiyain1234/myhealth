@@ -22,6 +22,23 @@
         .resting-box .value { color: #5352ed; }
         .sleep-box .value { color: #3742fa; }
 
+        /* 通知ボタンのスタイル */
+        .notify-btn {
+            margin-top: 20px;
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 15px;
+            background: #5865F2; /* Discordロゴ色 */
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+        .notify-btn:active { transform: scale(0.98); }
+        .notify-btn:disabled { background: #ccc; cursor: not-allowed; }
+
         #time { color: #aaa; font-size: 0.85rem; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
         .error-log { color: #ff4757; font-size: 0.7rem; margin-top: 5px; opacity: 0.7; }
     </style>
@@ -32,37 +49,59 @@
         
         <div class="card">
             <div class="grid">
-                <div class="stat-box bpm-box">
-                    <span class="label">心拍数</span>
-                    <span id="bpm" class="value">--</span><span class="unit">BPM</span>
-                </div>
-                <div class="stat-box steps-box">
-                    <span class="label">今日の歩数</span>
-                    <span id="steps" class="value">--</span><span class="unit">歩</span>
-                </div>
-                <div class="stat-box cal-box">
-                    <span class="label">アクティブ消費</span>
-                    <span id="calories" class="value">--</span><span class="unit">kcal</span>
-                </div>
-                <div class="stat-box resting-box">
-                    <span class="label">安静時消費</span>
-                    <span id="resting" class="value">--</span><span class="unit">kcal</span>
-                </div>
-                <div class="stat-box sleep-box">
-                    <span class="label">睡眠時間</span>
-                    <span id="sleep" class="value">--</span><span class="unit">時間</span>
-                </div>
+                <div class="stat-box bpm-box"><span class="label">心拍数</span><span id="bpm" class="value">--</span><span class="unit">BPM</span></div>
+                <div class="stat-box steps-box"><span class="label">今日の歩数</span><span id="steps" class="value">--</span><span class="unit">歩</span></div>
+                <div class="stat-box cal-box"><span class="label">アクティブ消費</span><span id="calories" class="value">--</span><span class="unit">kcal</span></div>
+                <div class="stat-box resting-box"><span class="label">安静時消費</span><span id="resting" class="value">--</span><span class="unit">kcal</span></div>
+                <div class="stat-box sleep-box"><span class="label">睡眠時間</span><span id="sleep" class="value">--</span><span class="unit">時間</span></div>
             </div>
+
+            <button id="notifyBtn" class="notify-btn" onclick="sendDiscordNotification()">
+                叩き起こす
+            </button>
+
             <div id="time">更新待ち...</div>
             <div id="debug" class="error-log"></div>
         </div>
     </div>
 
     <script>
-        // 日付文字列をJavaScriptが認識できる形式に変換する関数
+        const WEBHOOK_URL = 'ここにDiscordのWebhookURLを貼り付け';
+        // 自分のユーザーID（Discordで自分の名前を右クリックして「ユーザーIDをコピー」）
+        const MY_DISCORD_ID = 'ここに自分のユーザーIDを貼り付け'; 
+
+        async function sendDiscordNotification() {
+            const btn = document.getElementById('notifyBtn');
+            btn.disabled = true;
+            btn.innerText = "送信中...";
+
+            const content = `<@${MY_DISCORD_ID}> 活動ステータスが更新されました！\n現在の心拍数: ${document.getElementById('bpm').innerText} BPM`;
+
+            try {
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content: content })
+                });
+
+                if (response.ok) {
+                    btn.innerText = "送信完了！";
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.innerText = "叩き起こす";
+                    }, 3000);
+                } else {
+                    throw new Error();
+                }
+            } catch (e) {
+                alert("送信に失敗しました。Webhookの設定を確認してください。");
+                btn.disabled = false;
+                btn.innerText = "叩き起こす";
+            }
+        }
+
         function parseMyDate(dateStr) {
             if (!dateStr || typeof dateStr !== 'string') return null;
-            // "4/27/26 19:00:00" -> "2026/04/27 19:00:00"
             let s = dateStr.replace(/(\d+)\/(\d+)\/(\d+)/, '20$3/$1/$2');
             let d = new Date(s);
             return isNaN(d.getTime()) ? null : d;
@@ -71,8 +110,7 @@
         async function update() {
             try {
                 const res = await fetch('./data.json?' + new Date().getTime());
-                if (!res.ok) throw new Error("JSON読み込み失敗");
-                
+                if (!res.ok) throw new Error();
                 const text = await res.text();
                 const data = JSON.parse(text.replace(/,\s*}/g, '}').replace(/:\s*,/g, ':null,'));
                 
@@ -90,32 +128,24 @@
                 setVal('calories', data.calories, true);
                 setVal('resting', data.resting, true);
                 
-                // --- 睡眠時間の計算ロジック ---
                 if (data.sleep1 && data.sleep2) {
                     const start = parseMyDate(data.sleep1);
                     const end = parseMyDate(data.sleep2);
-                    
                     if (start && end) {
-                        // 差分をミリ秒で取得 -> 時間(h)に変換
                         let diffH = (end - start) / (1000 * 60 * 60);
-                        // もし日付を跨いでマイナスになった場合の補正（24時間を足す）
                         if (diffH < 0) diffH += 24; 
                         document.getElementById('sleep').innerText = diffH.toFixed(1);
                     }
                 } else {
-                    setVal('sleep', data.sleep); // 従来通りの数値（分）が届いた場合
+                    setVal('sleep', data.sleep);
                 }
                 
-                // --- 日付表示 ---
                 if (data.date) {
                     const d = parseMyDate(data.date);
-                    document.getElementById('time').innerText = "実行時刻: " + 
-                        (d ? d.toLocaleString('ja-JP') : data.date);
+                    document.getElementById('time').innerText = "実行時刻: " + (d ? d.toLocaleString('ja-JP') : data.date);
                 }
-
-                document.getElementById('debug').innerText = ""; 
             } catch (e) {
-                document.getElementById('debug').innerText = "データ解析中...";
+                document.getElementById('debug').innerText = "読み込み中...";
             }
         }
 
