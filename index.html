@@ -75,7 +75,7 @@
             btn.disabled = true;
             btn.innerText = "送信中...";
 
-            const content = `<@${MY_DISCORD_ID}> 活動ステータスが更新されました！\n現在の心拍数: ${document.getElementById('bpm').innerText} BPM`;
+            const content = `<@${MY_DISCORD_ID}> 叩き起こされました！\n現在の心拍数: ${document.getElementById('bpm').innerText} BPM`;
 
             try {
                 const response = await fetch(WEBHOOK_URL, {
