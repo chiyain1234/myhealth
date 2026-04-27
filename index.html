@@ -10,21 +10,21 @@
         .card { background: white; padding: 1.5rem; border-radius: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 20px; }
         h1 { font-size: 1.4rem; color: #333; margin-bottom: 20px; font-weight: bold; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .stat-box { background: #fdfdfd; padding: 15px; border-radius: 20px; border: 1px solid #f0f0f0; transition: transform 0.2s; }
+        .stat-box { background: #fdfdfd; padding: 15px; border-radius: 20px; border: 1px solid #f0f0f0; }
         .label { font-size: 0.85rem; color: #888; display: block; margin-bottom: 8px; }
-        .value { font-size: 1.6rem; font-weight: bold; font-variant-numeric: tabular-nums; }
+        .value { font-size: 1.6rem; font-weight: bold; }
         .unit { font-size: 0.8rem; margin-left: 4px; color: #999; }
         
-        /* 各項目のアクセントカラー */
+        /* 色分け */
         .bpm-box { grid-column: span 2; background: #fff5f6; border-color: #ffe0e3; }
-        .bpm-box .value { color: #ff4757; }
+        .bpm-box .value { color: #ff4757; font-size: 2.2rem; }
         .steps-box .value { color: #2ed573; }
         .cal-box .value { color: #ffa502; }
         .stress-box .value { color: #5352ed; }
         .sleep-box .value { color: #3742fa; }
 
         #time { color: #aaa; font-size: 0.85rem; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
-        .error-msg { color: #ff4757; font-size: 0.8rem; display: none; }
+        .error-log { color: #ff4757; font-size: 0.7rem; margin-top: 5px; opacity: 0.7; }
     </style>
 </head>
 <body>
@@ -54,47 +54,46 @@
                     <span id="sleep" class="value">--</span><span class="unit">時間</span>
                 </div>
             </div>
-            <div id="error" class="error-msg">データ読み込みに失敗しました</div>
             <div id="time">更新待ち...</div>
+            <div id="debug" class="error-log"></div>
         </div>
     </div>
 
     <script>
-        // 数字をカンマ区切りにするヘルパー
-        function formatNum(val) {
-            if (val === undefined || val === null || val === "") return "--";
-            return Number(val).toLocaleString();
-        }
-
         async function update() {
             try {
                 const res = await fetch('./data.json?' + new Date().getTime());
-                if (!res.ok) throw new Error();
+                if (!res.ok) throw new Error("JSON読み込み失敗");
                 const data = await res.json();
                 
-                // 各値の表示（変なデータが来ても"--"で耐える）
-                document.getElementById('bpm').innerText = data.bpm || "--";
-                document.getElementById('steps').innerText = formatNum(data.steps);
-                document.getElementById('calories').innerText = Math.round(data.calories) || "0";
-                document.getElementById('stress').innerText = data.stress || "--";
+                // 各値の安全な表示（nullやundefinedを弾く）
+                const setVal = (id, val, fallback = "--") => {
+                    document.getElementById(id).innerText = (val !== undefined && val !== null && val !== "") ? val : fallback;
+                };
+
+                setVal('bpm', data.bpm);
+                setVal('steps', data.steps ? Number(data.steps).toLocaleString() : "0");
+                setVal('calories', data.calories ? Math.round(data.calories) : "0");
+                setVal('stress', data.stress);
                 
-                // 睡眠時間の表示
-                let sleepVal = data.sleep;
-                if (typeof sleepVal === 'number') sleepVal = (sleepVal / 60).toFixed(1); // 分で届いた場合
-                document.getElementById('sleep').innerText = sleepVal || "--";
-                
-                // 送信時刻の表示
-                if (data.date) {
-                    // 日付形式がバラバラでもなるべく解析する
-                    const dateStr = data.date.replace(/-/g, '/').replace('JST', '');
-                    const dateObj = new Date(dateStr);
-                    const displayTime = isNaN(dateObj.getTime()) ? data.date : dateObj.toLocaleString('ja-JP');
-                    document.getElementById('time').innerText = "最終更新: " + displayTime;
+                // 睡眠時間の表示処理
+                let s = data.sleep;
+                if (s && !isNaN(s)) {
+                    // 数値(分)で届いた場合は時間に変換
+                    setVal('sleep', (Number(s) / 60).toFixed(1));
+                } else {
+                    setVal('sleep', s);
                 }
                 
-                document.getElementById('error').style.display = "none";
+                // 更新時刻
+                if (data.date) {
+                    const d = new Date(data.date.replace(/-/g, '/').replace('JST', ''));
+                    document.getElementById('time').innerText = "最終送信: " + (isNaN(d.getTime()) ? data.date : d.toLocaleString('ja-JP'));
+                }
+
+                document.getElementById('debug').innerText = ""; 
             } catch (e) {
-                document.getElementById('error').style.display = "block";
+                document.getElementById('debug').innerText = "通信中またはデータ待ち...";
             }
         }
 
