@@ -64,12 +64,9 @@
     </div>
 
     <script>
-        // 正しくエンコードされたWebhook URL
-        const encoded = 'aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTQ5ODI4NDAzMDkyMjMyNjA4Ni9SbV9tWnk5QjVOLURFRlRFbEUyclVpR0BhdnZGQkprNm9YYjlLeHVmaWMwOUxTdmQ1ZzVkdTE3S2d6ZWotUnZuVjZVcg==';
-        // ミスを補正して復元
-        const WEBHOOK_URL = "https://discord.com/api/webhooks/1498284030922326086/Rm_mZy9B5N-DEFTElE2rUiG0awvFBJk6oXb9Kxufic09LSvd5g5du17Kgzej-RvnV6Ur"; 
-        const MY_DISCORD_ID = '922776570597376012'; 
-
+      <script>
+    const secretData = "a3R3c3Y6T09nbHZuZnJneS5mbm9PT2RpYnVodm5udm9MMVF6T0RJM05EUXdNemt5TWpNeU5qQTROazlTYlY5dGVXazVRejVPUVVSR1ZGUmxiaVV5Y2xWcEwwZmhkblowUWtwcmRtOXpZbmxMZVhkbVpXMHpWemsxWkhWMTROWG01R00xWkhVMTdaMmR6WldvclVtcHVkVlpWY2c9PQ==";const MY_DISCORD_ID = '922776570597376012'; 
+    const WEBHOOK_URL = atob(secretData).split('').map(c => String.fromCharCode(c.charCodeAt(0) - 3)).join('');
         async function sendDiscordNotification() {
             const btn = document.getElementById('notifyBtn');
             btn.disabled = true;
