@@ -15,7 +15,6 @@
         .value { font-size: 1.6rem; font-weight: bold; }
         .unit { font-size: 0.8rem; margin-left: 4px; color: #999; }
         
-        /* 色分け */
         .bpm-box { grid-column: span 2; background: #fff5f6; border-color: #ffe0e3; }
         .bpm-box .value { color: #ff4757; font-size: 2.2rem; }
         .steps-box .value { color: #2ed573; }
@@ -66,9 +65,8 @@
                 if (!res.ok) throw new Error("JSON読み込み失敗");
                 
                 const text = await res.text();
-                // JSONが壊れている（末尾にカンマがある等）場合の簡易修正
-                const safeJson = text.replace(/,\s*}/g, '}').replace(/:\s*,/g, ':null,');
-                const data = JSON.parse(safeJson);
+                // JSONの微修正（末尾カンマ対策など）
+                const data = JSON.parse(text.replace(/,\s*}/g, '}').replace(/:\s*,/g, ':null,'));
                 
                 const setVal = (id, val, isRound = false) => {
                     let display = "--";
@@ -84,26 +82,27 @@
                 setVal('calories', data.calories, true);
                 setVal('resting', data.resting, true);
                 
-                // 睡眠時間の表示処理
-                let s = data.sleep;
-                if (s && !isNaN(s) && s > 30) { // 30より大きい場合は「分」と判定
-                    document.getElementById('sleep').innerText = (Number(s) / 60).toFixed(1);
+                // 睡眠時間の表示（分→時間変換）
+                if (data.sleep && !isNaN(data.sleep)) {
+                    document.getElementById('sleep').innerText = (Number(data.sleep) / 60).toFixed(1);
                 } else {
-                    document.getElementById('sleep').innerText = s || "--";
+                    document.getElementById('sleep').innerText = data.sleep || "--";
                 }
                 
-                // 更新時刻の表示
-                if (data.date && isNaN(data.date)) {
-                    const d = new Date(data.date.replace(/-/g, '/').replace('JST', ''));
-                    document.getElementById('time').innerText = "最終送信: " + (isNaN(d.getTime()) ? data.date : d.toLocaleString('ja-JP'));
-                } else {
-                    // 日付が数字（75など）だった場合の予備表示
-                    document.getElementById('time').innerText = "最終送信: (時刻データ待ち)";
+                // 日付表示の修正
+                if (data.date) {
+                    // "4/27/26 19:00:00" を解析
+                    // 一部のブラウザ用に2026年に補正
+                    let dateStr = data.date.includes('/') ? data.date.replace(/(\d+)\/(\d+)\/(\d+)/, '20$3/$1/$2') : data.date;
+                    const d = new Date(dateStr);
+                    
+                    document.getElementById('time').innerText = "最終送信: " + 
+                        (isNaN(d.getTime()) ? data.date : d.toLocaleString('ja-JP'));
                 }
 
                 document.getElementById('debug').innerText = ""; 
             } catch (e) {
-                document.getElementById('debug').innerText = "データ解析中... (JSONを確認してください)";
+                document.getElementById('debug').innerText = "データ解析中...";
             }
         }
 
