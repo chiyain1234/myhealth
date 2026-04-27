@@ -5,10 +5,11 @@
     <title>ちゃいんの心拍数</title>
     <style>
         body { font-family: sans-serif; text-align: center; background: #f0f2f5; margin: 0; padding: 20px; }
-        .card { background: white; padding: 2rem; border-radius: 20px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        #bpm { font-size: 4rem; color: #ff4757; font-weight: bold; margin: 10px 0; }
-        #time { color: #747d8c; font-size: 1.1rem; }
-        h1 { font-size: 1.5rem; color: #333; }
+        .card { background: white; padding: 2rem; border-radius: 20px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1); min-width: 300px; }
+        #bpm { font-size: 5rem; color: #ff4757; font-weight: bold; margin: 10px 0; }
+        #time { color: #747d8c; font-size: 1.2rem; font-weight: 500; }
+        h1 { font-size: 1.5rem; color: #333; margin-bottom: 0.5rem; }
+        p { color: #a1a1a1; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
     </style>
 </head>
 <body>
@@ -25,17 +26,29 @@
                 const res = await fetch('./data.json?' + new Date().getTime());
                 const data = await res.json();
                 
+                // BPMを表示
                 document.getElementById('bpm').innerText = data.bpm;
                 
-                const dateObj = new Date(data.date);
+                // 日付の解析
+                // "4/27/26 18:00:00 JST" のような形式を解析
+                let dateStr = data.date;
+                
+                // ブラウザが解釈しやすいように少し整形（JSTを取り除くなど）
+                let cleanDateStr = dateStr.replace('JST', '').trim();
+                const dateObj = new Date(cleanDateStr);
                 
                 if (isNaN(dateObj.getTime())) {
-                    document.getElementById('time').innerText = "日付データが不正です";
+                    // もし解析に失敗したら、届いた文字をそのまま出す（安全策）
+                    document.getElementById('time').innerText = dateStr;
                 } else {
+                    // 日本語形式で「分・秒」まで表示
                     document.getElementById('time').innerText = dateObj.toLocaleString('ja-JP', {
+                        month: '2-digit',
+                        day: '2-digit',
                         hour: '2-digit',
                         minute: '2-digit',
-                        second: '2-digit'
+                        second: '2-digit',
+                        hour12: false
                     });
                 }
             } catch (e) {
@@ -44,7 +57,7 @@
         }
 
         update();
-        setInterval(update, 30000);
+        setInterval(update, 30000); // 30秒ごとにチェック
     </script>
 </body>
 </html>
