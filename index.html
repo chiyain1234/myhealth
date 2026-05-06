@@ -55,11 +55,19 @@
         .cal-box .value { color: var(--cal-orange); }
         .sleep-box { grid-column: span 2; background: linear-gradient(to bottom right, #f8faff, #f0f3ff); }
         .sleep-box .value { color: var(--sleep-blue); font-size: 1.6rem; }
-        /* 睡眠時間内の「時間」「分」の文字を少し小さくする */
         .sleep-box .unit-inline { font-size: 0.9rem; margin: 0 4px; font-weight: 600; color: var(--sleep-blue); }
 
+        /* 名前入力欄のスタイル */
+        .name-input-wrap { margin-top: 15px; margin-bottom: 5px; }
+        .name-input {
+            width: 100%; padding: 10px 15px; border: 2px solid #edf2f7; border-radius: 12px;
+            font-size: 0.85rem; box-sizing: border-box; outline: none; transition: border-color 0.3s; font-family: inherit;
+        }
+        .name-input:focus { border-color: var(--discord-color); }
+        .name-label { font-size: 0.65rem; color: var(--text-sub); margin-left: 5px; margin-bottom: 3px; display: block; font-weight: 600; }
+
         .notify-btn {
-            margin-top: 15px; width: 100%; padding: 14px; border: none; border-radius: 18px; 
+            margin-top: 10px; width: 100%; padding: 14px; border: none; border-radius: 18px; 
             background: var(--discord-color); color: white; font-size: 0.95rem; font-weight: 800; 
             cursor: pointer; box-shadow: 0 8px 15px rgba(88, 101, 242, 0.3); 
             display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -93,11 +101,18 @@
                 <div class="stat-box sleep-box">
                     <span class="label">😴 睡眠時間</span>
                     <span id="sleep" class="value">--</span>
-                    </div>
+                </div>
             </div>
+
+            <div class="name-input-wrap">
+                <label class="name-label">あなたの名前（任意）</label>
+                <input type="text" id="userName" class="name-input" placeholder="名無しさん">
+            </div>
+
             <button id="notifyBtn" class="notify-btn" onclick="sendDiscordNotification()">
                 <span>🔔</span> 叩き起こす
             </button>
+
             <div id="time">更新待ち...</div>
             <div id="debug" class="error-log"></div>
         </div>
@@ -110,11 +125,19 @@
 
         async function sendDiscordNotification() {
             const btn = document.getElementById('notifyBtn');
+            const nameInput = document.getElementById('userName');
+            
+            // 名前の取得（空なら「名無しさん」）
+            const senderName = nameInput.value.trim() || "名無しさん";
+            
             btn.disabled = true;
             btn.innerText = "送信中...";
+            
             const WEBHOOK_URL = part2 + part1;
             const bpm = document.getElementById('bpm').innerText;
-            const content = `<@${MY_DISCORD_ID}> 叩き起こされました！\n現在の心拍数: ${bpm} BPM`;
+            
+            // メッセージ内容の構築
+            const content = `📢 **${senderName}** が <@${MY_DISCORD_ID}> を叩き起こしました！\n現在の心拍数: ${bpm} BPM`;
 
             try {
                 const response = await fetch(WEBHOOK_URL, {
@@ -124,7 +147,10 @@
                 });
                 if (response.ok) {
                     btn.innerText = "✅ 送信成功";
-                    setTimeout(() => { btn.disabled = false; btn.innerText = "🔔 叩き起こす"; }, 3000);
+                    setTimeout(() => { 
+                        btn.disabled = false; 
+                        btn.innerText = "🔔 叩き起こす"; 
+                    }, 3000);
                 } else { throw new Error(); }
             } catch (e) {
                 alert("送信に失敗しました。");
@@ -169,7 +195,7 @@
                     heartIcon.style.animationDuration = `${duration}s`;
                 }
                 
-                // 睡眠時間の計算（時間と分に変換）
+                // 睡眠時間の計算
                 if (data.sleep1 && data.sleep2) {
                     const start = parseMyDate(data.sleep1);
                     const end = parseMyDate(data.sleep2);
