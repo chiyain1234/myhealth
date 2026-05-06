@@ -55,24 +55,26 @@
         .cal-box .value { color: var(--cal-orange); }
         .sleep-box { grid-column: span 2; background: linear-gradient(to bottom right, #f8faff, #f0f3ff); }
         .sleep-box .value { color: var(--sleep-blue); font-size: 1.6rem; }
-        .sleep-box .unit-inline { font-size: 0.9rem; margin: 0 4px; font-weight: 600; color: var(--sleep-blue); }
 
-        /* 名前入力欄のスタイル */
-        .name-input-wrap { margin-top: 15px; margin-bottom: 5px; }
-        .name-input {
-            width: 100%; padding: 10px 15px; border: 2px solid #edf2f7; border-radius: 12px;
-            font-size: 0.85rem; box-sizing: border-box; outline: none; transition: border-color 0.3s; font-family: inherit;
+        /* 入力エリアのデザイン */
+        .input-group { margin-top: 15px; }
+        .input-field {
+            width: 100%; padding: 10px 12px; border: 2px solid #edf2f7; border-radius: 12px;
+            font-size: 0.85rem; box-sizing: border-box; outline: none; transition: all 0.3s;
+            font-family: inherit; margin-bottom: 8px;
         }
-        .name-input:focus { border-color: var(--discord-color); }
-        .name-label { font-size: 0.65rem; color: var(--text-sub); margin-left: 5px; margin-bottom: 3px; display: block; font-weight: 600; }
+        .input-field:focus { border-color: var(--discord-color); background: white; }
+        textarea.input-field { resize: none; height: 60px; }
+        .field-label { font-size: 0.65rem; color: var(--text-sub); margin: 0 0 4px 5px; display: block; font-weight: 700; }
 
         .notify-btn {
-            margin-top: 10px; width: 100%; padding: 14px; border: none; border-radius: 18px; 
+            width: 100%; padding: 14px; border: none; border-radius: 18px; 
             background: var(--discord-color); color: white; font-size: 0.95rem; font-weight: 800; 
             cursor: pointer; box-shadow: 0 8px 15px rgba(88, 101, 242, 0.3); 
-            display: flex; align-items: center; justify-content: center; gap: 8px;
+            display: flex; align-items: center; justify-content: center; gap: 8px; transition: transform 0.2s;
         }
-        .notify-btn:disabled { background: #b2bec3; }
+        .notify-btn:active { transform: scale(0.98); }
+        .notify-btn:disabled { background: #b2bec3; box-shadow: none; }
 
         #time { color: #a0aec0; font-size: 0.7rem; margin-top: 15px; padding-top: 10px; border-top: 1px solid #f1f2f6; text-align: center; }
         .error-log { color: #ff4757; font-size: 0.65rem; text-align: center; margin-top: 4px; }
@@ -104,9 +106,13 @@
                 </div>
             </div>
 
-            <div class="name-input-wrap">
-                <label class="name-label">あなたの名前（任意）</label>
-                <input type="text" id="userName" class="name-input" placeholder="名無しさん">
+            <!-- 入力セクション -->
+            <div class="input-group">
+                <label class="field-label">名前 (任意)</label>
+                <input type="text" id="userName" class="input-field" placeholder="名無しさん">
+                
+                <label class="field-label">メッセージ (任意)</label>
+                <textarea id="userMsg" class="input-field" placeholder="起きてー！"></textarea>
             </div>
 
             <button id="notifyBtn" class="notify-btn" onclick="sendDiscordNotification()">
@@ -125,10 +131,11 @@
 
         async function sendDiscordNotification() {
             const btn = document.getElementById('notifyBtn');
-            const nameInput = document.getElementById('userName');
+            const nameField = document.getElementById('userName');
+            const msgField = document.getElementById('userMsg');
             
-            // 名前の取得（空なら「名無しさん」）
-            const senderName = nameInput.value.trim() || "名無しさん";
+            const senderName = nameField.value.trim() || "名無しさん";
+            const message = msgField.value.trim() || "（メッセージなし）";
             
             btn.disabled = true;
             btn.innerText = "送信中...";
@@ -136,8 +143,8 @@
             const WEBHOOK_URL = part2 + part1;
             const bpm = document.getElementById('bpm').innerText;
             
-            // メッセージ内容の構築
-            const content = `📢 **${senderName}** が <@${MY_DISCORD_ID}> を叩き起こしました！\n現在の心拍数: ${bpm} BPM`;
+            // Discordに送る内容
+            const content = `📢 **${senderName}** からの通知！\n「${message}」\n\n<@${MY_DISCORD_ID}> 叩き起こされました！ (現在の心拍数: ${bpm} BPM)`;
 
             try {
                 const response = await fetch(WEBHOOK_URL, {
@@ -146,7 +153,8 @@
                     body: JSON.stringify({ content: content })
                 });
                 if (response.ok) {
-                    btn.innerText = "✅ 送信成功";
+                    btn.innerText = "✅ 送信完了";
+                    msgField.value = ""; // メッセージだけ消す
                     setTimeout(() => { 
                         btn.disabled = false; 
                         btn.innerText = "🔔 叩き起こす"; 
@@ -159,6 +167,7 @@
             }
         }
 
+        // --- データ更新ロジック ---
         function parseMyDate(dateStr) {
             if (!dateStr || typeof dateStr !== 'string') return null;
             let s = dateStr.includes('/') ? dateStr.replace(/(\d+)\/(\d+)\/(\d+)/, '20$3/$1/$2') : dateStr;
@@ -170,8 +179,7 @@
             try {
                 const res = await fetch('./data.json?' + new Date().getTime());
                 if (!res.ok) throw new Error();
-                const text = await res.text();
-                const data = JSON.parse(text.replace(/,\s*}/g, '}').replace(/:\s*,/g, ':null,'));
+                const data = await res.json();
                 
                 const setVal = (id, val, isRound = false) => {
                     const el = document.getElementById(id);
@@ -188,27 +196,19 @@
                 setVal('steps', data.steps);
                 setVal('calories', data.calories, true);
 
-                // 心拍数連動アニメーション
                 const heartIcon = document.querySelector('.heart-icon');
                 if (heartIcon && data.bpm > 0) {
-                    const duration = 60 / data.bpm; 
-                    heartIcon.style.animationDuration = `${duration}s`;
+                    heartIcon.style.animationDuration = `${60 / data.bpm}s`;
                 }
                 
-                // 睡眠時間の計算
                 if (data.sleep1 && data.sleep2) {
                     const start = parseMyDate(data.sleep1);
                     const end = parseMyDate(data.sleep2);
                     if (start && end) {
                         let diffMs = end - start;
-                        if (diffMs < 0) diffMs += 24 * 60 * 60 * 1000; 
-                        
-                        const totalMinutes = Math.floor(diffMs / (1000 * 60));
-                        const h = Math.floor(totalMinutes / 60);
-                        const m = totalMinutes % 60;
-                        
-                        document.getElementById('sleep').innerHTML = 
-                            `${h}<span class="unit-inline">時間</span>${m}<span class="unit-inline">分</span>`;
+                        if (diffMs < 0) diffMs += 86400000; 
+                        const totalMinutes = Math.floor(diffMs / 60000);
+                        document.getElementById('sleep').innerHTML = `${Math.floor(totalMinutes / 60)}<span class="unit-inline">時間</span>${totalMinutes % 60}<span class="unit-inline">分</span>`;
                     }
                 } else {
                     setVal('sleep', data.sleep);
@@ -220,7 +220,7 @@
                 }
                 document.getElementById('debug').innerText = "";
             } catch (e) {
-                document.getElementById('debug').innerText = "データ更新を確認中...";
+                document.getElementById('debug').innerText = "接続中...";
             }
         }
 
