@@ -53,10 +53,13 @@
 
         .steps-box .value { color: var(--steps-green); }
         .cal-box .value { color: var(--cal-orange); }
+
+        /* 睡眠ボックスの強化 */
         .sleep-box { grid-column: span 2; background: linear-gradient(to bottom right, #f8faff, #f0f3ff); }
         .sleep-box .value { color: var(--sleep-blue); font-size: 1.6rem; }
+        .sleep-range { font-size: 0.75rem; color: var(--text-sub); font-weight: 700; margin-bottom: 2px; }
+        .unit-inline { font-size: 0.8rem; margin: 0 2px; color: var(--sleep-blue); font-weight: 600; }
 
-        /* 入力エリアのデザイン */
         .input-group { margin-top: 15px; }
         .input-field {
             width: 100%; padding: 10px 12px; border: 2px solid #edf2f7; border-radius: 12px;
@@ -64,7 +67,7 @@
             font-family: inherit; margin-bottom: 8px;
         }
         .input-field:focus { border-color: var(--discord-color); background: white; }
-        textarea.input-field { resize: none; height: 60px; }
+        textarea.input-field { resize: none; height: 50px; }
         .field-label { font-size: 0.65rem; color: var(--text-sub); margin: 0 0 4px 5px; display: block; font-weight: 700; }
 
         .notify-btn {
@@ -101,16 +104,15 @@
                     <span class="unit">kcal</span>
                 </div>
                 <div class="stat-box sleep-box">
-                    <span class="label">😴 睡眠時間</span>
+                    <span class="label">😴 睡眠</span>
+                    <div id="sleep-range" class="sleep-range">--:-- 〜 --:--</div>
                     <span id="sleep" class="value">--</span>
                 </div>
             </div>
 
-            <!-- 入力セクション -->
             <div class="input-group">
                 <label class="field-label">名前 (任意)</label>
                 <input type="text" id="userName" class="input-field" placeholder="名無しさん">
-                
                 <label class="field-label">メッセージ (任意)</label>
                 <textarea id="userMsg" class="input-field" placeholder="メッセージ"></textarea>
             </div>
@@ -133,32 +135,25 @@
             const btn = document.getElementById('notifyBtn');
             const nameField = document.getElementById('userName');
             const msgField = document.getElementById('userMsg');
-            
             const senderName = nameField.value.trim() || "名無しさん";
             const message = msgField.value.trim() || "（メッセージなし）";
             
             btn.disabled = true;
             btn.innerText = "送信中...";
             
-            const WEBHOOK_URL = part2 + part1;
             const bpm = document.getElementById('bpm').innerText;
-            
-            // Discordに送る内容
             const content = `📢 **${senderName}** からの通知！\n「${message}」\n\n<@${MY_DISCORD_ID}> 叩き起こされました！ (現在の心拍数: ${bpm} BPM)`;
 
             try {
-                const response = await fetch(WEBHOOK_URL, {
+                const response = await fetch(part2 + part1, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ content: content })
                 });
                 if (response.ok) {
                     btn.innerText = "✅ 送信完了";
-                    msgField.value = ""; // メッセージだけ消す
-                    setTimeout(() => { 
-                        btn.disabled = false; 
-                        btn.innerText = "🔔 叩き起こす"; 
-                    }, 3000);
+                    msgField.value = "";
+                    setTimeout(() => { btn.disabled = false; btn.innerText = "🔔 叩き起こす"; }, 3000);
                 } else { throw new Error(); }
             } catch (e) {
                 alert("送信に失敗しました。");
@@ -167,12 +162,17 @@
             }
         }
 
-        // --- データ更新ロジック ---
         function parseMyDate(dateStr) {
             if (!dateStr || typeof dateStr !== 'string') return null;
             let s = dateStr.includes('/') ? dateStr.replace(/(\d+)\/(\d+)\/(\d+)/, '20$3/$1/$2') : dateStr;
             let d = new Date(s);
             return isNaN(d.getTime()) ? null : d;
+        }
+
+        function formatTime(date) {
+            if (!date) return "--:--";
+            return date.getHours().toString().padStart(2, '0') + ":" + 
+                   date.getMinutes().toString().padStart(2, '0');
         }
 
         async function update() {
@@ -196,21 +196,28 @@
                 setVal('steps', data.steps);
                 setVal('calories', data.calories, true);
 
-                const heartIcon = document.querySelector('.heart-icon');
-                if (heartIcon && data.bpm > 0) {
-                    heartIcon.style.animationDuration = `${60 / data.bpm}s`;
+                if (data.bpm > 0) {
+                    document.querySelector('.heart-icon').style.animationDuration = `${60 / data.bpm}s`;
                 }
                 
+                // 睡眠の詳細計算
                 if (data.sleep1 && data.sleep2) {
                     const start = parseMyDate(data.sleep1);
                     const end = parseMyDate(data.sleep2);
+                    
                     if (start && end) {
+                        // 時刻の表示
+                        document.getElementById('sleep-range').innerText = `${formatTime(start)} 〜 ${formatTime(end)}`;
+                        
+                        // 合計時間の計算
                         let diffMs = end - start;
                         if (diffMs < 0) diffMs += 86400000; 
-                        const totalMinutes = Math.floor(diffMs / 60000);
-                        document.getElementById('sleep').innerHTML = `${Math.floor(totalMinutes / 60)}<span class="unit-inline">時間</span>${totalMinutes % 60}<span class="unit-inline">分</span>`;
+                        const totalMin = Math.floor(diffMs / 60000);
+                        document.getElementById('sleep').innerHTML = 
+                            `${Math.floor(totalMin / 60)}<span class="unit-inline">時間</span>${totalMin % 60}<span class="unit-inline">分</span>`;
                     }
                 } else {
+                    document.getElementById('sleep-range').innerText = "時刻データなし";
                     setVal('sleep', data.sleep);
                 }
                 
