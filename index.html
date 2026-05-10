@@ -15,6 +15,7 @@
             --steps-green: #2ed573;
             --cal-orange: #ffa502;
             --sleep-blue: #3742fa;
+            --msg-bg: #f1f2f6;
         }
 
         html, body { 
@@ -31,7 +32,7 @@
         .container { width: 90%; max-width: 380px; max-height: 95vh; display: flex; flex-direction: column; justify-content: center; }
         h1 { color: white; font-size: 1.2rem; margin: 0 0 15px 0; font-weight: 700; text-shadow: 0 2px 10px rgba(0,0,0,0.2); text-align: center; }
 
-        .card { background: var(--card-bg); padding: 1.5rem; border-radius: 28px; box-shadow: 0 20px 40px -12px rgba(0,0,0,0.3); backdrop-filter: blur(10px); }
+        .card { background: var(--card-bg); padding: 1.5rem; border-radius: 28px; box-shadow: 0 20px 40px -12px rgba(0,0,0,0.3); backdrop-filter: blur(10px); overflow-y: auto; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
         .stat-box { background: #ffffff; padding: 12px 8px; border-radius: 20px; border: 1px solid #edf2f7; text-align: center; }
@@ -54,13 +55,24 @@
         .steps-box .value { color: var(--steps-green); }
         .cal-box .value { color: var(--cal-orange); }
 
-        /* 睡眠ボックスの強化 */
         .sleep-box { grid-column: span 2; background: linear-gradient(to bottom right, #f8faff, #f0f3ff); }
         .sleep-box .value { color: var(--sleep-blue); font-size: 1.6rem; }
         .sleep-range { font-size: 0.75rem; color: var(--text-sub); font-weight: 700; margin-bottom: 2px; }
         .unit-inline { font-size: 0.8rem; margin: 0 2px; color: var(--sleep-blue); font-weight: 600; }
 
-        .input-group { margin-top: 15px; }
+        /* 追加：あなたのメッセージ表示エリア */
+        .my-message-area {
+            margin-top: 15px; padding: 12px; background: var(--msg-bg); border-radius: 15px;
+            display: none; border-left: 4px solid var(--discord-color);
+            animation: slideDown 0.3s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .my-message-text { font-size: 0.85rem; line-height: 1.5; color: var(--text-main); white-space: pre-wrap; }
+
+        .input-group { margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px; }
         .input-field {
             width: 100%; padding: 10px 12px; border: 2px solid #edf2f7; border-radius: 12px;
             font-size: 0.85rem; box-sizing: border-box; outline: none; transition: all 0.3s;
@@ -70,14 +82,17 @@
         textarea.input-field { resize: none; height: 50px; }
         .field-label { font-size: 0.65rem; color: var(--text-sub); margin: 0 0 4px 5px; display: block; font-weight: 700; }
 
-        .notify-btn {
-            width: 100%; padding: 14px; border: none; border-radius: 18px; 
-            background: var(--discord-color); color: white; font-size: 0.95rem; font-weight: 800; 
-            cursor: pointer; box-shadow: 0 8px 15px rgba(88, 101, 242, 0.3); 
-            display: flex; align-items: center; justify-content: center; gap: 8px; transition: transform 0.2s;
+        .btn-container { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+        .action-btn {
+            width: 100%; padding: 12px; border: none; border-radius: 18px; 
+            font-size: 0.9rem; font-weight: 800; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s;
         }
-        .notify-btn:active { transform: scale(0.98); }
-        .notify-btn:disabled { background: #b2bec3; box-shadow: none; }
+        .notify-btn { background: var(--discord-color); color: white; box-shadow: 0 8px 15px rgba(88, 101, 242, 0.3); }
+        .msg-view-btn { background: #747d8c; color: white; }
+        
+        .action-btn:active { transform: scale(0.96); opacity: 0.9; }
+        .action-btn:disabled { background: #b2bec3; box-shadow: none; }
 
         #time { color: #a0aec0; font-size: 0.7rem; margin-top: 15px; padding-top: 10px; border-top: 1px solid #f1f2f6; text-align: center; }
         .error-log { color: #ff4757; font-size: 0.65rem; text-align: center; margin-top: 4px; }
@@ -110,16 +125,27 @@
                 </div>
             </div>
 
+            <!-- あなたのメッセージ表示エリア -->
+            <div id="myMessageArea" class="my-message-area">
+                <span class="field-label" style="margin-left:0; color:var(--discord-color)">FROM ちゃいん</span>
+                <div id="myMessageText" class="my-message-text">メッセージを取得中...</div>
+            </div>
+
+            <div class="btn-container">
+                <button id="viewMsgBtn" class="action-btn msg-view-btn" onclick="toggleMyMessage()">
+                    💬 メッセージを見る
+                </button>
+            </div>
+
             <div class="input-group">
                 <label class="field-label">名前 (任意)</label>
                 <input type="text" id="userName" class="input-field" placeholder="名無しさん">
                 <label class="field-label">メッセージ (任意)</label>
                 <textarea id="userMsg" class="input-field" placeholder="メッセージ"></textarea>
+                <button id="notifyBtn" class="action-btn notify-btn" onclick="sendDiscordNotification()">
+                    <span>🔔</span> 叩き起こす
+                </button>
             </div>
-
-            <button id="notifyBtn" class="notify-btn" onclick="sendDiscordNotification()">
-                <span>🔔</span> 叩き起こす
-            </button>
 
             <div id="time">更新待ち...</div>
             <div id="debug" class="error-log"></div>
@@ -130,6 +156,21 @@
         const part1 = "Rm_mZy9B5N-DEFTElE2rUiG0awvFBJk6oXb9Kxufic09LSvd5g5du17Kgzej-RvnV6Ur";
         const part2 = "https://discord.com/api/webhooks/1498284030922326086/";
         const MY_DISCORD_ID = '922776570597376012'; 
+
+        let currentMyMessage = "現在メッセージはありません。";
+
+        // メッセージの表示・非表示切り替え
+        function toggleMyMessage() {
+            const area = document.getElementById('myMessageArea');
+            const btn = document.getElementById('viewMsgBtn');
+            if (area.style.display === 'none' || area.style.display === '') {
+                area.style.display = 'block';
+                btn.innerText = "✖ メッセージを閉じる";
+            } else {
+                area.style.display = 'none';
+                btn.innerText = "💬 メッセージを見る";
+            }
+        }
 
         async function sendDiscordNotification() {
             const btn = document.getElementById('notifyBtn');
@@ -196,20 +237,21 @@
                 setVal('steps', data.steps);
                 setVal('calories', data.calories, true);
 
+                // メッセージの更新
+                if (data.message) {
+                    currentMyMessage = data.message;
+                    document.getElementById('myMessageText').innerText = currentMyMessage;
+                }
+
                 if (data.bpm > 0) {
                     document.querySelector('.heart-icon').style.animationDuration = `${60 / data.bpm}s`;
                 }
                 
-                // 睡眠の詳細計算
                 if (data.sleep1 && data.sleep2) {
                     const start = parseMyDate(data.sleep1);
                     const end = parseMyDate(data.sleep2);
-                    
                     if (start && end) {
-                        // 時刻の表示
                         document.getElementById('sleep-range').innerText = `${formatTime(start)} 〜 ${formatTime(end)}`;
-                        
-                        // 合計時間の計算
                         let diffMs = end - start;
                         if (diffMs < 0) diffMs += 86400000; 
                         const totalMin = Math.floor(diffMs / 60000);
@@ -227,7 +269,7 @@
                 }
                 document.getElementById('debug').innerText = "";
             } catch (e) {
-                document.getElementById('debug').innerText = "接続中...";
+                document.getElementById('debug').innerText = "データ取得中...";
             }
         }
 
