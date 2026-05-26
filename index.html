@@ -60,7 +60,6 @@
         .sleep-range { font-size: 0.75rem; color: var(--text-sub); font-weight: 700; margin-bottom: 2px; }
         .unit-inline { font-size: 0.8rem; margin: 0 2px; color: var(--sleep-blue); font-weight: 600; }
 
-        /* 追加：あなたのメッセージ表示エリア */
         .my-message-area {
             margin-top: 15px; padding: 12px; background: var(--msg-bg); border-radius: 15px;
             display: none; border-left: 4px solid var(--discord-color);
@@ -92,7 +91,7 @@
         .msg-view-btn { background: #747d8c; color: white; }
         
         .action-btn:active { transform: scale(0.96); opacity: 0.9; }
-        .action-btn:disabled { background: #b2bec3; box-shadow: none; }
+        .action-btn:disabled { background: #b2bec3; box-shadow: none; cursor: not-allowed; }
 
         #time { color: #a0aec0; font-size: 0.7rem; margin-top: 15px; padding-top: 10px; border-top: 1px solid #f1f2f6; text-align: center; }
         .error-log { color: #ff4757; font-size: 0.65rem; text-align: center; margin-top: 4px; }
@@ -125,7 +124,6 @@
                 </div>
             </div>
 
-            <!-- あなたのメッセージ表示エリア -->
             <div id="myMessageArea" class="my-message-area">
                 <span class="field-label" style="margin-left:0; color:var(--discord-color)">FROM ちゃいん</span>
                 <div id="myMessageText" class="my-message-text">メッセージを取得中...</div>
@@ -140,8 +138,13 @@
             <div class="input-group">
                 <label class="field-label">名前 (任意)</label>
                 <input type="text" id="userName" class="input-field" placeholder="名無しさん">
+                
                 <label class="field-label">メッセージ (任意)</label>
                 <textarea id="userMsg" class="input-field" placeholder="メッセージ"></textarea>
+                
+                <label class="field-label">🔑 認証パスワード (必須)</label>
+                <input type="password" id="secretPass" class="input-field" placeholder="パスワードを入力してください">
+                
                 <button id="notifyBtn" class="action-btn notify-btn" onclick="sendDiscordNotification()">
                     <span>🔔</span> 叩き起こす
                 </button>
@@ -156,6 +159,8 @@
         const part1 = "Rm_mZy9B5N-DEFTElE2rUiG0awvFBJk6oXb9Kxufic09LSvd5g5du17Kgzej-RvnV6Ur";
         const part2 = "https://discord.com/api/webhooks/1498284030922326086/";
         const MY_DISCORD_ID = '922776570597376012'; 
+
+        const CORRECT_PASSWORD = 'Nellium';
 
         let currentMyMessage = "現在メッセージはありません。";
 
@@ -176,8 +181,19 @@
             const btn = document.getElementById('notifyBtn');
             const nameField = document.getElementById('userName');
             const msgField = document.getElementById('userMsg');
+            const passField = document.getElementById('secretPass');
+            
             const senderName = nameField.value.trim() || "名無しさん";
             const message = msgField.value.trim() || "（メッセージなし）";
+            const inputPass = passField.value.trim();
+
+            // パスワードの簡易チェック
+            if (inputPass !== CORRECT_PASSWORD) {
+                alert("パスワードが正しくありません。");
+                passField.value = "";
+                passField.focus();
+                return;
+            }
             
             btn.disabled = true;
             btn.innerText = "送信中...";
@@ -194,6 +210,7 @@
                 if (response.ok) {
                     btn.innerText = "✅ 送信完了";
                     msgField.value = "";
+                    passField.value = ""; // 送信成功時にパスワード欄をクリア
                     setTimeout(() => { btn.disabled = false; btn.innerText = "🔔 叩き起こす"; }, 3000);
                 } else { throw new Error(); }
             } catch (e) {
